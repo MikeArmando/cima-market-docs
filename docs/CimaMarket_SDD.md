@@ -5,7 +5,7 @@
 | Campo                   | Detalle                             |
 | ----------------------- | ----------------------------------- |
 | **Nombre del Producto** | Cima Market                         |
-| **Versión**             | 1.0.0                               |
+| **Versión**             | 1.0.1                               |
 | **Fecha**               | 20 de Julio de 2026                 |
 | **Estado**              | Aprobado                            |
 | **Autor**               | Mike Armando Montano Valencia       |
@@ -13,10 +13,19 @@
 
 ---
 
+## Historial de Cambios
+
+| Versión | Fecha               | Sección                 | Cambio                                                                                                       |
+| ------- | ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
+| 1.0.1   | 25 de Julio de 2026 | §5.2 `campus_buildings` | Se agrega restricción `UNIQUE (campus_id, name)` para prevenir edificios duplicados dentro del mismo campus. |
+
+---
+
 ## Tabla de Contenidos
 
 - [Software Design Description (SDD)](#software-design-description-sdd)
   - [Cima Market — Plataforma de Compra-Venta para Estudiantes UABC](#cima-market--plataforma-de-compra-venta-para-estudiantes-uabc)
+  - [Historial de Cambios](#historial-de-cambios)
   - [Tabla de Contenidos](#tabla-de-contenidos)
   - [1. Introducción](#1-introducción)
     - [1.1 Propósito del Documento](#11-propósito-del-documento)
@@ -955,6 +964,8 @@ Catálogo de edificios y áreas de cada campus. Fuente de verdad para ubicacione
 | `is_active`  | BOOLEAN               | NOT NULL DEFAULT true                     | Permite desactivar sin eliminar completamente                                                                                                                          |
 | `created_at` | TIMESTAMPTZ           | NOT NULL DEFAULT NOW()                    |                                                                                                                                                                        |
 | `updated_at` | TIMESTAMPTZ           | NOT NULL DEFAULT NOW()                    |                                                                                                                                                                        |
+
+**Restricción:** `UNIQUE (campus_id, name)` — evita edificios duplicados dentro del mismo campus. Nombres iguales en campus distintos son válidos (ej. ambos campus pueden tener una "Cafetería").
 
 ---
 
