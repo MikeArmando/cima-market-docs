@@ -5,7 +5,7 @@
 | Campo                   | Detalle                             |
 | ----------------------- | ----------------------------------- |
 | **Nombre del Producto** | Cima Market                         |
-| **Versión**             | 1.0.0                               |
+| **Versión**             | 1.1.0                               |
 | **Fecha**               | 20 de Julio de 2026                 |
 | **Estado**              | Aprobado                            |
 | **Autor**               | Mike Armando Montano Valencia       |
@@ -13,10 +13,19 @@
 
 ---
 
+## Historial de Cambios
+
+| Versión | Fecha               | Sección       | Cambio                                                                                                                                                                |
+| ------- | ------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1.0   | 27 de Julio de 2026 | §5 (Módulo 8) | Se agrega RF-MOD-05 (reporte general de la plataforma) para formalizar la acción "Reportar un problema" de P-11, que no tenía requisito ni trazabilidad hacia el SDD. |
+
+---
+
 ## Tabla de Contenidos
 
 - [Software Requirements Specification (SRS)](#software-requirements-specification-srs)
   - [Cima Market — Plataforma de Compra-Venta para Estudiantes UABC](#cima-market--plataforma-de-compra-venta-para-estudiantes-uabc)
+  - [Historial de Cambios](#historial-de-cambios)
   - [Tabla de Contenidos](#tabla-de-contenidos)
   - [1. Introducción](#1-introducción)
     - [1.1 Propósito del Documento](#11-propósito-del-documento)
@@ -78,6 +87,7 @@
       - [RF-MOD-02 — Reporte de usuario](#rf-mod-02--reporte-de-usuario)
       - [RF-MOD-03 — Herramientas de administración](#rf-mod-03--herramientas-de-administración)
       - [RF-MOD-04 — Historial de acciones de moderación sobre usuarios](#rf-mod-04--historial-de-acciones-de-moderación-sobre-usuarios)
+      - [RF-MOD-05 — Reporte general de la plataforma](#rf-mod-05--reporte-general-de-la-plataforma)
     - [Módulo 9: Notificaciones](#módulo-9-notificaciones)
       - [RF-NOT-01 — Notificaciones in-app](#rf-not-01--notificaciones-in-app)
       - [RF-NOT-02 — Notificaciones push web](#rf-not-02--notificaciones-push-web)
@@ -913,6 +923,13 @@ Cada registro del historial incluirá, como mínimo:
 **Razón de diseño:** una cuenta puede ser suspendida y reactivada más de una vez a lo largo de su vida en la plataforma. Conservar únicamente el motivo de la acción más reciente impediría detectar patrones de reincidencia o auditar decisiones pasadas de moderación. Este historial es independiente del estado actual de la cuenta (activa, suspendida o eliminada), que el sistema debe poder consultar de forma inmediata sin depender de este registro histórico.
 
 Este historial es de uso exclusivo del panel de administración y no es visible para el usuario afectado ni para otros usuarios de la plataforma.
+
+---
+
+#### RF-MOD-05 — Reporte general de la plataforma
+**Prioridad:** Media
+
+Un usuario autenticado podrá enviar un reporte general sobre un problema con la plataforma. A diferencia de los reportes de contenido (RF-MOD-01, RF-MOD-02), no requiere razón predefinida — el campo de detalle es obligatorio y contiene la descripción completa del problema.
 
 ---
 

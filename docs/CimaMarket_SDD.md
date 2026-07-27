@@ -5,7 +5,7 @@
 | Campo                   | Detalle                             |
 | ----------------------- | ----------------------------------- |
 | **Nombre del Producto** | Cima Market                         |
-| **Versión**             | 1.0.1                               |
+| **Versión**             | 1.0.2                               |
 | **Fecha**               | 20 de Julio de 2026                 |
 | **Estado**              | Aprobado                            |
 | **Autor**               | Mike Armando Montano Valencia       |
@@ -15,9 +15,10 @@
 
 ## Historial de Cambios
 
-| Versión | Fecha               | Sección                 | Cambio                                                                                                       |
-| ------- | ------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------ |
-| 1.0.1   | 25 de Julio de 2026 | §5.2 `campus_buildings` | Se agrega restricción `UNIQUE (campus_id, name)` para prevenir edificios duplicados dentro del mismo campus. |
+| Versión | Fecha               | Sección                 | Cambio                                                                                                                                                      |
+| ------- | ------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.0.1   | 25 de Julio de 2026 | §5.2 `campus_buildings` | Se agrega restricción `UNIQUE (campus_id, name)` para prevenir edificios duplicados dentro del mismo campus.                                                |
+| 1.0.2   | 27 de Julio de 2026 | §4.9, §5.2 `reports`    | Se agrega `target_type = 'general'` (con sus `CHECK` en `target_id` y `details`) y la fila correspondiente en `POST /api/reports`, para soportar RF-MOD-05. |
 
 ---
 
@@ -753,9 +754,9 @@ El CRUD de campus se gestiona desde `/api/admin/campuses` (→ §4.13).
 
 ### 4.9 Reportes (`/api/reports`)
 
-| Método | Ruta           | Acceso      | Propósito                                                                                                                                                                |
-| ------ | -------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| POST   | `/api/reports` | Autenticada | Crea reporte sobre publicación, usuario o reseña. Valida combinaciones válidas de `target_type` y `reason` en la capa de API antes de persistir. → RF-MOD-01, RF-MOD-02. |
+| Método | Ruta           | Acceso      | Propósito                                                                                                                                                                                                                                                                                      |
+| ------ | -------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/reports` | Autenticada | Crea reporte sobre publicación, usuario, reseña, o un problema general de la plataforma (`target_type = 'general'`, sin `target_id`, `details` obligatorio). Valida combinaciones válidas de `target_type` y `reason` en la capa de API antes de persistir. → RF-MOD-01, RF-MOD-02, RF-MOD-05. |
 
 **Combinaciones válidas de `target_type` y `reason`:**
 
@@ -764,6 +765,7 @@ El CRUD de campus se gestiona desde `/api/admin/campuses` (→ §4.13).
 | `product`     | `inappropriate_content`, `prohibited_item`, `spam_or_duplicate`, `other` |
 | `user`        | `misconduct`, `harassment`, `fraud`, `other`                             |
 | `review`      | `inappropriate_content`, `other`                                         |
+| `general`     | `other`                                                                  |
 
 ---
 
@@ -1130,20 +1132,20 @@ Reseñas de compradores sobre vendedores. Una reseña evalúa al vendedor, no a 
 ---
 
 #### `reports`
-Reportes enviados por usuarios sobre publicaciones, usuarios o reseñas.
+Reportes enviados por usuarios sobre publicaciones, usuarios, reseñas, o problemas generales de la plataforma.
 
-| Campo         | Tipo                                                                                                                | Restricciones                          | Descripción                                                                                                                                                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | UUID                                                                                                                | PK                                     |                                                                                                                                                                                                                                   |
-| `reporter_id` | UUID                                                                                                                | FK → users ON DELETE RESTRICT NOT NULL | El borrado físico de `users` está bloqueado por diseño (→ DD-05). El vínculo con el reportante se preserva tras la anonimización, permitiendo trazar patrones de reportes abusivos incluso si la cuenta reportante fue eliminada. |
-| `target_type` | ENUM(`product`, `user`, `review`)                                                                                   | NOT NULL                               |                                                                                                                                                                                                                                   |
-| `target_id`   | UUID                                                                                                                | NOT NULL                               | No es FK tipada porque referencia tablas distintas según `target_type`                                                                                                                                                            |
-| `reason`      | ENUM(`inappropriate_content`, `prohibited_item`, `spam_or_duplicate`, `misconduct`, `harassment`, `fraud`, `other`) | NOT NULL                               |                                                                                                                                                                                                                                   |
-| `details`     | VARCHAR(1000)                                                                                                       | NULL                                   | Descripción adicional opcional                                                                                                                                                                                                    |
-| `status`      | ENUM(`pending`, `reviewed`, `resolved`, `dismissed`)                                                                | NOT NULL DEFAULT 'pending'             |                                                                                                                                                                                                                                   |
-| `reviewed_by` | UUID                                                                                                                | FK → users ON DELETE RESTRICT NULL     | El borrado físico de `users` está bloqueado por diseño (→ DD-05). El vínculo con el administrador que resolvió el reporte se preserva como registro de auditoría interna.                                                         |
-| `resolved_at` | TIMESTAMPTZ                                                                                                         | NULL                                   |                                                                                                                                                                                                                                   |
-| `created_at`  | TIMESTAMPTZ                                                                                                         | NOT NULL DEFAULT NOW()                 |                                                                                                                                                                                                                                   |
+| Campo         | Tipo                                                                                                                | Restricciones                                                     | Descripción                                                                                                                                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | UUID                                                                                                                | PK                                                                |                                                                                                                                                                                                                                   |
+| `reporter_id` | UUID                                                                                                                | FK → users ON DELETE RESTRICT NOT NULL                            | El borrado físico de `users` está bloqueado por diseño (→ DD-05). El vínculo con el reportante se preserva tras la anonimización, permitiendo trazar patrones de reportes abusivos incluso si la cuenta reportante fue eliminada. |
+| `target_type` | ENUM(`product`, `user`, `review`, `general`)                                                                        | NOT NULL                                                          | `general` es un reporte no asociado a ningún recurso — problema con la plataforma en sí (→ RF-MOD-05)                                                                                                                             |
+| `target_id`   | UUID                                                                                                                | NULL — `CHECK (target_type = 'general' OR target_id IS NOT NULL)` | No es FK tipada porque referencia tablas distintas según `target_type`. Solo es NULL cuando `target_type = 'general'`                                                                                                             |
+| `reason`      | ENUM(`inappropriate_content`, `prohibited_item`, `spam_or_duplicate`, `misconduct`, `harassment`, `fraud`, `other`) | NOT NULL                                                          |                                                                                                                                                                                                                                   |
+| `details`     | VARCHAR(1000)                                                                                                       | NULL — `CHECK (target_type != 'general' OR details IS NOT NULL)`  | Descripción adicional opcional; obligatorio si `target_type = 'general'`, donde es el cuerpo completo del reporte                                                                                                                 |
+| `status`      | ENUM(`pending`, `reviewed`, `resolved`, `dismissed`)                                                                | NOT NULL DEFAULT 'pending'                                        |                                                                                                                                                                                                                                   |
+| `reviewed_by` | UUID                                                                                                                | FK → users ON DELETE RESTRICT NULL                                | El borrado físico de `users` está bloqueado por diseño (→ DD-05). El vínculo con el administrador que resolvió el reporte se preserva como registro de auditoría interna.                                                         |
+| `resolved_at` | TIMESTAMPTZ                                                                                                         | NULL                                                              |                                                                                                                                                                                                                                   |
+| `created_at`  | TIMESTAMPTZ                                                                                                         | NOT NULL DEFAULT NOW()                                            |                                                                                                                                                                                                                                   |
 
 ---
 
