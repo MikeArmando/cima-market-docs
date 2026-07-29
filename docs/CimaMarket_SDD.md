@@ -5,7 +5,7 @@
 | Campo                   | Detalle                             |
 | ----------------------- | ----------------------------------- |
 | **Nombre del Producto** | Cima Market                         |
-| **Versión**             | 1.0.4                               |
+| **Versión**             | 1.0.5                               |
 | **Fecha**               | 20 de Julio de 2026                 |
 | **Estado**              | Aprobado                            |
 | **Autor**               | Mike Armando Montano Valencia       |
@@ -21,6 +21,7 @@
 | 1.0.2   | 27 de Julio de 2026 | §4.9, §5.2 `reports`    | Se agrega `target_type = 'general'` (con sus `CHECK` en `target_id` y `details`) y la fila correspondiente en `POST /api/reports`, para soportar RF-MOD-05.                                                                                                                                                                                                                                           |
 | 1.0.3   | 27 de Julio de 2026 | §4.3                    | Se documenta que `GET /api/products` expone `selling_now` por publicación, calculado con el mismo `EXISTS` sobre `seller_live_locations` que `GET /api/users/:id` (§4.2), evaluado sobre el `seller_id` que la query ya joinea para `min_rating` — sin consulta adicional por publicación. Cierra el hueco que impedía a P-01 mostrar el indicador "Vendiendo ahora" por tarjeta sin incurrir en N+1. |
 | 1.0.4   | 28 de Julio de 2026 | §5.1                    | Se agrega la convención de serialización de coordenadas geográficas en respuestas de API (`{lat, lng}`, no `{x, y}`) a la tabla "Decisiones transversales del esquema", aplicable a `campus_buildings.location` y `seller_live_locations.location`. Evita inconsistencia con `campuses.center_lat`/`center_lng` y coordenadas invertidas al consumirse desde Leaflet.js (RF-MAP-01).                  |
+| 1.0.5   | 28 de Julio de 2026 | §3.3.4                  | Se documenta el mecanismo de conteo del rate limit de contacto (`COUNT` sobre `contact_events`), dado que el modelo serverless (§2.4) y la exclusión de Redis/estado en memoria (§5.1) impiden un contador en memoria.                                                                                                                                                                                |
 
 ---
 
@@ -557,6 +558,8 @@ El rate limiting se aplica por capa de endpoint, no de forma global uniforme.
 
 El rate limiting por `user_id` en el endpoint de contacto es más restrictivo y específico que el rate limiting por IP, porque su propósito no es proteger contra DDoS sino prevenir la extracción automatizada de números de WhatsApp por parte de usuarios autenticados.
 
+**Mecanismo de conteo:** dado que las funciones serverless no mantienen estado en memoria entre invocaciones y el sistema no utiliza Redis ni ningún otro almacenamiento intermedio (→ §2.4, §5.1), el límite de contacto se aplica consultando directamente `contact_events`: `COUNT(*) FROM contact_events WHERE buyer_id = :user_id AND created_at > NOW() - INTERVAL '1 hour'`, evaluado en cada petición a `POST /api/contact/:productId` y `POST /api/contact-free/:productId` antes de registrar el nuevo evento.
+
 ---
 
 #### 3.3.5 Seguridad en el Manejo de Imágenes
@@ -722,7 +725,7 @@ El CRUD de campus se gestiona desde `/api/admin/campuses` (→ §4.13).
 **Notas de implementación:**
 
 - Se usa `POST` en lugar de `GET` para prevenir caché del navegador o proxies intermedios sobre una respuesta que contiene un enlace con el número de WhatsApp.
-- Rate limiting por `user_id`. → §3.3.4 para el valor exacto.
+- Rate limiting por `user_id`. → §3.3.4 para el valor exacto y el mecanismo de conteo.
 - Ambos endpoints son idempotentes ante contacto duplicado: usan `INSERT INTO contact_events ... ON CONFLICT (buyer_id, seller_id, product_id) DO NOTHING`. El enlace se retorna igualmente en ambos casos. → RF-WA-01.
 - El mensaje pre-generado de `POST /api/contact/:productId` sigue la plantilla definida en RF-WA-01.
 
